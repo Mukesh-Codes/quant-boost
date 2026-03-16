@@ -9,7 +9,7 @@ using namespace std;
 
 class ThreadPool {
     private:
-        queue<function<void()>> funcs;
+        queue<function<void()>> tasks;
         vector<thread> workers;
         int num_threads;
         int num_stocks;
@@ -36,7 +36,7 @@ class ThreadPool {
     public:
         ThreadPool(int num_threads, int num_stocks): num_threads(num_threads), num_stocks(num_stocks), stop(false){
             for (int i = 0; i < num_threads; i++) {
-                workers.emplace_back([this] { worker(); });
+                workers.push_back(thread([this] { create_things(); }));
             }
         }
         void enqueue(function<void()> task) {
@@ -45,6 +45,22 @@ class ThreadPool {
                 tasks.push(move(task));
             }
             cv.notify_one();
+        }
+        void request_stop() {
+            lock_guard<mutex> lock(mtx);
+            stop = true;
+            cv.notify_all();
+        }
+        void stop_pool() {
+            {
+                lock_guard<mutex> lock(mtx);
+                stop = true;
+            }
+            cv.notify_all();
+            for (auto& t : workers) {
+                if (t.joinable())
+                    t.join();
+            }
         }
         ~ThreadPool() {
             {

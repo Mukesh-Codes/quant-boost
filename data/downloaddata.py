@@ -9,7 +9,6 @@ TICKERS = [
 
 END = date.today()
 START = END - timedelta(days=365)
-
 os.makedirs("data", exist_ok=True)
 
 for ticker in TICKERS:
@@ -18,5 +17,4 @@ for ticker in TICKERS:
     df.columns = df.columns.get_level_values(0)
     df.reset_index(inplace=True)
     df.to_csv(f"data/{ticker}.csv")
-
 print("Done.")
